@@ -1,31 +1,42 @@
-#!/usr/bin/env python3
-"""Sum up the world's news of Wednesday 18 November 2026 in one image.
+"""Deliver the 18 November 2026 front page for judging.
 
-Entry program for the make.fun news-image-20261118 competition.
-The entry image is committed in this repository as entry.png (a
-newspaper front page composed from an original illustration and the
-day's headlines). This program copies it, byte for byte, to
-/output/entry.png, creating /output if needed, so every run produces
-the same image.
+This repository holds the finished artwork as entry.png beside this
+file. Executing the file places a faithful copy at /output/entry.png
+and then compares the copy against the original byte by byte before
+reporting success, so Wednesday 18 November 2026 is summed up in one
+image exactly as it was composed.
 """
-import shutil
-from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+import pathlib
 
-
-def main():
-    src = HERE / "entry.png"
-    if not src.is_file():
-        raise FileNotFoundError(f"entry image not found: {src}")
-    dst = Path("/output/entry.png")
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(src, dst)
-    size = src.stat().st_size
-    if dst.stat().st_size != size:
-        raise IOError(f"copy size mismatch: wrote {dst.stat().st_size} of {size} bytes")
-    print(f"Wrote {dst} ({size} bytes, size verified).")
+ARTWORK_NAME = "entry.png"
+OUTPUT_FILE = pathlib.Path("/output") / "entry.png"
 
 
-if __name__ == "__main__":
-    main()
+def read_artwork():
+    here = pathlib.Path(__file__).resolve().parent
+    artwork = here / ARTWORK_NAME
+    if not artwork.is_file():
+        raise SystemExit("artwork missing beside the script: " + str(artwork))
+    return artwork.read_bytes()
+
+
+def place_copy(data):
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_FILE.write_bytes(data)
+    return OUTPUT_FILE
+
+
+def entry_point():
+    data = read_artwork()
+    if not data:
+        raise SystemExit("artwork file is empty, refusing to deliver")
+    placed = place_copy(data)
+    if placed.stat().st_size != len(data):
+        raise SystemExit("the delivered copy has the wrong size")
+    if placed.read_bytes() != data:
+        raise SystemExit("the delivered copy does not match the artwork")
+    print("front page delivered to %s (%d bytes, match confirmed)" % (placed, len(data)))
+
+
+entry_point()
